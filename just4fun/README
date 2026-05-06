@@ -1,0 +1,27 @@
+Πριν κάνετε deploy το stack, ελέγξτε πρώτα ότι:
+1. η published port που θα χρησιμοποιήσετε είναι ελεύθερη
+2. το stack name που θα δώσετε δεν συγκρούεται με άλλο δικό σας stack
+
+Ενδεικτικά:
+- για έλεγχο port:
+  ss -lntp | grep 8080
+
+- για έλεγχο των ήδη υπαρχόντων stacks:
+  docker stack ls
+
+Παράδειγμα deploy:
+docker stack deploy -c docker-compose.yml mystack
+
+Μετά μπορείτε να ελέγξετε:
+docker stack services mystack
+docker stack ps mystack
+
+#scale 
+docker service scale testweb_web=5
+
+#Και άνοιγμα στον browser:
+http://83.212.76.117:port
+
+# next
+# volumes:
+#      - /mnt/shared/dir:/usr/share/nginx/html

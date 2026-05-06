@@ -1,0 +1,44 @@
+services:
+  web:
+    image: nginx:alpine
+    ports:
+      - "9967:80"
+    restart: unless-stopped
+    networks:
+      - web-net
+    volumes:
+      - /mnt/shared/dir:/usr/share/nginx/html
+
+    deploy:
+      mode: replicated
+      endpoint_mode: vip
+      replicas: 3
+
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 500M
+        reservations:
+          cpus: '0.25'
+          memory: 200M
+
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        window: 120s
+
+      update_config:
+        parallelism: 2
+        delay: 10s
+        order: stop-first
+        failure_action: rollback
+
+      placement:
+        max_replicas_per_node: 1
+        constraints:
+          - node.role == worker
+
+networks:
+  web-net:
+    driver: overlay
+    attachable: true
