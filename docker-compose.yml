@@ -14,10 +14,6 @@ services:
       - ./postgres14:/var/lib/postgresql/data
     environment:
       - 'POSTGRES_HOST_AUTH_METHOD=trust'
-      -  POSTGRES_USER: mastodon
-      -  POSTGRES_DB: mastodon_production
-      -  POSTGRES_PASSWORD: password
-
   redis:
     restart: always
     image: redis:7-alpine
@@ -27,10 +23,6 @@ services:
       test: ['CMD', 'redis-cli', 'ping']
     volumes:
       - ./redis:/data
-    environment:
-      -  REDIS_USER: mastodon
-      -  REDIS_DB: mastodon_production
-      -  REDIS_PASSWORD: password
 
   # es:
   #   restart: always
@@ -68,7 +60,7 @@ services:
     # build: .
     image: ghcr.io/mastodon/mastodon:v4.5.9
     restart: always
-    env_file: .env.production
+    env_file: env.production
     command: bundle exec puma -C config/puma.rb
     networks:
       - external_network
@@ -92,7 +84,7 @@ services:
     #   context: .
     image: ghcr.io/mastodon/mastodon-streaming:v4.5.9
     restart: always
-    env_file: .env.production
+    env_file: env.production
     command: node ./streaming/index.js
     networks:
       - external_network
@@ -111,7 +103,7 @@ services:
     # build: .
     image: ghcr.io/mastodon/mastodon:v4.5.9
     restart: always
-    env_file: .env.production
+    env_file: env.production
     command: bundle exec sidekiq
     depends_on:
       - db
