@@ -7,7 +7,7 @@ services:
     networks:
       - web-net
     volumes:
-      - /mnt/shared/dir:/usr/share/nginx/html
+      - /mastodon/just4fun/haha.html
 
     deploy:
       mode: replicated
