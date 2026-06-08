@@ -1,0 +1,14 @@
+services:
+
+  grafana:
+    image: grafana/grafana:main-slim
+    volumes:
+      - /home/fedlab/test12345:/var/lib/grafana
+    ports:
+      - "9053:3000"
+    networks:
+      - autoscale_monitor-net
+
+networks:
+  monitor-net:
+    external: true

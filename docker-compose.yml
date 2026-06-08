@@ -2,8 +2,9 @@
 # For a containerized local dev environment, see: https://github.com/mastodon/mastodon/blob/main/docs/DEVELOPMENT.md#docker
 
 services:
+  
   db:
-    restart: always
+    restart: unless-stopped
     image: postgres:14-alpine
     shm_size: 256mb
     networks:
@@ -11,9 +12,14 @@ services:
     healthcheck:
       test: ['CMD', 'pg_isready', '-U', 'postgres']
     volumes:
-      - ./postgres14:/var/lib/postgresql/data
+      - /mnt/shared/22390231/db:/postgresql/data
     environment:
       - 'POSTGRES_HOST_AUTH_METHOD=trust'
+    deploy:
+      placement:
+        max_replicas_per_node: 1
+        constraints:
+          - node.role == worker
   redis:
     restart: always
     image: redis:7-alpine
@@ -22,8 +28,12 @@ services:
     healthcheck:
       test: ['CMD', 'redis-cli', 'ping']
     volumes:
-      - ./redis:/data
-
+      - /mnt/shared/22390231/redis:/data
+    deploy:
+      placement:
+        max_replicas_per_node: 1
+        constraints:
+          - node.role == worker
   # es:
   #   restart: always
   #   image: docker.elastic.co/elasticsearch/elasticsearch:7.17.29
@@ -75,8 +85,34 @@ services:
       - redis
       # - es
     volumes:
-      - ./public/system:/mastodon/public/system
+      - /mnt/shared/22390231/web:/mastodon/public/system
+    deploy:
+      mode: replicated
+      endpoint_mode: vip
+      replicas: 3
 
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 500M
+        reservations:
+          cpus: '0.25'
+          memory: 200M
+
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        window: 120s
+
+      update_config:
+        parallelism: 2
+        delay: 10s
+        order: stop-first
+        failure_action: rollback
+      placement:
+        max_replicas_per_node: 1
+        constraints:
+          - node.role == worker
   streaming:
     # You can uncomment the following lines if you want to not use the prebuilt image, for example if you have local code changes
     # build:
@@ -93,10 +129,15 @@ services:
       # prettier-ignore
       test: ['CMD-SHELL', "curl -s --noproxy localhost localhost:4000/api/v1/streaming/health | grep -q 'OK' || exit 1"]
     ports:
-      - '127.0.0.1:4000:4000'
+      - '9968:4000'
     depends_on:
       - db
       - redis
+    deploy:
+      placement:
+        max_replicas_per_node: 1
+        constraints:
+          - node.role == worker
 
   sidekiq:
     # You can uncomment the following line if you want to not use the prebuilt image, for example if you have local code changes
@@ -112,10 +153,14 @@ services:
       - external_network
       - internal_network
     volumes:
-      - ./public/system:/mastodon/public/system
+      - /mnt/shared/22390231/mastodon:/mastodon/public/system
     healthcheck:
       test: ['CMD-SHELL', "ps aux | grep '[s]idekiq\ 8' || false"]
-
+    deploy:
+      placement:
+        max_replicas_per_node: 1
+        constraints:
+          - node.role == worker
   ## Uncomment to enable federation with tor instances along with adding the following ENV variables
   ## http_hidden_proxy=http://privoxy:8118
   ## ALLOW_ACCESS_TO_HIDDEN_SERVICE=true
@@ -136,4 +181,3 @@ services:
 networks:
   external_network:
   internal_network:
-    internal: true
